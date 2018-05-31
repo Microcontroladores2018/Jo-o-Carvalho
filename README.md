@@ -1,5 +1,5 @@
-#Plot de velocidade de Motor DC em tempo real
-##Proposta
+# Plot de velocidade de Motor DC em tempo real
+## Proposta
 Este projeto tem como objetivo plotar, em tempo real, a velocidade de um motor DC através da leitura de um encoder. Os sinais do encoder
 serão enviados para duas portas GPIO da Discovery configuradas em modo Alternate Function que serão utilizadas para configurar um TIMER em
 modo de leitura de encoder através de biblioteca da própria SPL (Standard Peripherals Library). Serão feitas medições periódicas no valor
@@ -8,7 +8,7 @@ do contador do TIMER a fim de, através das devidas conversões matemáticas, ob
 Além disso, deve haver uma comunicação USB entre a Discovery e um PC de forma que os resultados de medição de velocidade sejam enviados 
 continuamente para o PC, onde podem ser plotados através do LabView.
 
-##Periféricos
+## Periféricos
 No projeto serão utilizados:
 1 STM32F407 Discovery
 1 Motor DC 7.2V
