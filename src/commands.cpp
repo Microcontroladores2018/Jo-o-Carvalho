@@ -4,7 +4,7 @@ extern CommandLine cmdline;
 
 extern float currentSpd;
 
-
+int aux = (int)1000*currentSpd;
 
 uint16_t cmd_info(uint16_t argc, uint8_t *argv8[]){
 	const char **argv=(const char **)argv8;
@@ -12,7 +12,7 @@ uint16_t cmd_info(uint16_t argc, uint8_t *argv8[]){
 	char* buffer=(char*)argv[0];
 
 	if(argc==1){
-		size+=sprintf(buffer+size, "\n%f", currentSpd);
+		size+=sprintf(buffer+size, "%s\n", (char*)aux);
 	} else {
 		size+=sprintf(buffer+size, "Syntax: info\r\n");
 	}
