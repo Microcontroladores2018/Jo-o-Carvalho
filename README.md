@@ -34,7 +34,7 @@ Figura 2: Fluxograma
 ## Interfaces para usuário
 O código está configurado para, ao receber o comando \[A, equivalente a pressionar a tecla de seta para cima no prompt do TeraTerm, exibir a velocidade atual calculada pelo firmware. 
 
-O mesmo comando é utilizado para a interface do LabView, na qual plota-se um gráfico em tempo real da velocidade da roda conectada ao motor0 do robô.
+O mesmo comando é utilizado para a interface do LabView, na qual plota-se um gráfico em tempo real da velocidade da roda conectada ao motor0 do robô utilizado na equipe SSL da RoboIME.
 
 ## Referências
 [Firmware SSL 2016](https://github.com/roboime/roboime-firmware)
