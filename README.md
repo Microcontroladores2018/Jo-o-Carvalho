@@ -10,11 +10,11 @@ continuamente para o PC, onde podem ser plotados através do LabView.
 
 ## Periféricos
 No projeto serão utilizados:
-#### 1 STM32F407 Discovery
-#### 1 Motor DC 7.2V
-#### 1 Encoder em quadratura de 400 divisões
-#### 1 PC - LabView -
-#### 1 Roda de Metal
+1 STM32F407 Discovery
+1 Motor DC 7.2V
+1 Encoder em quadratura de 400 divisões
+1 PC - LabView -
+1 Roda de Metal
 
 ![Diagrama de Blocos](DiagBlocosuC.PNG)
 Figura 1: Diagrama de Blocos

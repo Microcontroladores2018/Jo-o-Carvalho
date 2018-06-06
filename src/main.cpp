@@ -71,9 +71,9 @@ USB_DEVICE_CLASS_CDC_RNDIS usb_device_class_cdc_rndis(0);
 USB_DEVICE_CLASS_CDC_VCP usb_device_class_cdc_vcp(1);
 USB_DEVICE_CLASS_AUDIO usb_device_class_audio(0);
 
-float currentSpd;
-int16_t lastCount, currentCount;
-float convert = 2*3.14159265*0.028*1000/(5*400*8); //2*pi*raio_da_roda/(5ms*400divisoes*8tx_de_transf)
+int speed[10];
+int encoderCount[10];
+float convert = 2*3.14159265*0.028*1000/(10*400*8); //2*pi*raio_da_roda/(10ms*400divisoes*8tx_de_transf)
 
 
 USB_STM32 usb(0x29BC, 0x0002, "IME", "Microcontroladores 2018", SerialNumberGetHexaString());
@@ -106,8 +106,8 @@ void TimerEncM0_Init(){
 	//TIM_DeInit(TIM3);
 
 	TIM_Cmd(TIM3,ENABLE);
-	TIM_SetCounter(TIM3, (uint32_t) 0);
-	//TIM_SetAutoreload(TIM3, 0x226);//0x226=550
+	//TIM_SetCounter(TIM3, (uint32_t) 0);
+	//TIM_SetAutoreload(TIM3, 9999);//0x226=550
 }
 
 void TimerVel_Init(){
@@ -118,7 +118,7 @@ void TimerVel_Init(){
   TIM_TimeBaseStructure.TIM_ClockDivision=0;
   TIM_TimeBaseStructure.TIM_CounterMode=TIM_CounterMode_Up;
   TIM_TimeBaseStructure.TIM_Prescaler=83;
-  TIM_TimeBaseStructure.TIM_Period=4999;
+  TIM_TimeBaseStructure.TIM_Period=999;
   TIM_TimeBaseInit(TIM6,&TIM_TimeBaseStructure);
 
 
@@ -127,10 +127,19 @@ void TimerVel_Init(){
 }
 
 void controle(){
-	//GPIO_ToggleBits(GPIOD, GPIO_Pin_12);
+	int currentCount, currentSpd;
+
 	currentCount = TIM_GetCounter(TIM3);
-	currentSpd = (currentCount - lastCount)*convert;
-	lastCount = currentCount;
+
+	for (int i=9; i>0; i--){
+		encoderCount[i]=encoderCount[i-1];
+		speed[i]=speed[i-1];
+	}
+
+	encoderCount[0]=currentCount;
+
+	currentSpd = 1000*(encoderCount[0] - encoderCount[9])*convert;
+	speed[0]=currentSpd;
 }
 
 int main(void)

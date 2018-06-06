@@ -2,9 +2,8 @@
 
 extern CommandLine cmdline;
 
-extern float currentSpd;
+extern int speed[0];
 
-int aux = (int)1000*currentSpd;
 
 uint16_t cmd_info(uint16_t argc, uint8_t *argv8[]){
 	const char **argv=(const char **)argv8;
@@ -12,7 +11,7 @@ uint16_t cmd_info(uint16_t argc, uint8_t *argv8[]){
 	char* buffer=(char*)argv[0];
 
 	if(argc==1){
-		size+=sprintf(buffer+size, "%s\n", (char*)aux);
+		size+=sprintf(buffer+size, "%d\n", speed[0]);
 	} else {
 		size+=sprintf(buffer+size, "Syntax: info\r\n");
 	}
@@ -20,7 +19,5 @@ uint16_t cmd_info(uint16_t argc, uint8_t *argv8[]){
 }
 
 
-
-
-CommandLine cmdline({"info"},
+CommandLine cmdline({"[A"},
 					{cmd_info});
