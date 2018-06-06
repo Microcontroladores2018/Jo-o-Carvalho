@@ -27,3 +27,11 @@ USB Serial -> PA11 e PB12: Special Mode
 
 ## Fluxograma
 O código segue em um Loop Infinito até que seja chamada a interrupção do Timer 6, que acontece a cada 1ms, chamando a função controle que atualiza os vetores encoderCount, calcula o valor atual da velocidade do motor e salva no vetor speed, que também é atualizado no início da interrupção. O valor atual da velocidade é utilizado como parâmetro para uma função que executa comunicação serial via USB de forma que, através de um programa no LabView, pode-se ler continuamente as velocidades medidas e plotá-las em um gráfico.
+
+![Fluxograma](Fluxograma.PNG)
+Figura 2: Fluxograma
+
+## Referências
+[Firmware SSL 2016](https://github.com/roboime/roboime-firmware)
+[User Manual STM32F407VG](http://www.st.com/content/ccc/resource/technical/document/user_manual/70/fe/4a/3f/e7/e1/4f/7d/DM00039084.pdf/files/DM00039084.pdf/jcr:content/translations/en.DM00039084.pdf)
+Aulas de Microcontroladores
