@@ -71,8 +71,8 @@ USB_DEVICE_CLASS_CDC_RNDIS usb_device_class_cdc_rndis(0);
 USB_DEVICE_CLASS_CDC_VCP usb_device_class_cdc_vcp(1);
 USB_DEVICE_CLASS_AUDIO usb_device_class_audio(0);
 
-int speed[10];
-int encoderCount[10];
+int speed[10]; //vetor que armazena as 10 ultimas medicoes de velocidade da roda
+int encoderCount[10]; //vetor que armazena as 10 ultimas medicoes de velocidade da roda
 float convert = 2*3.14159265*0.028*1000/(10*400*8); //2*pi*raio_da_roda/(10ms*400divisoes*8tx_de_transf)
 
 
@@ -80,6 +80,7 @@ USB_STM32 usb(0x29BC, 0x0002, "IME", "Microcontroladores 2018", SerialNumberGetH
 
 INTERRUPT_STM32 usb_otg_fs_interrupt(OTG_FS_IRQn, 0x0D, 0x0D, ENABLE);
 
+//Configura PB4 e PB5 para leitura de encoder
 void TimerEncM0_Init(){
 	RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOB, ENABLE);
 
@@ -110,6 +111,7 @@ void TimerEncM0_Init(){
 	//TIM_SetAutoreload(TIM3, 9999);//0x226=550
 }
 
+//Config timer6 para gerar interrupção a cada 1ms
 void TimerVel_Init(){
   RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM6, ENABLE);
   TIM_DeInit(TIM6);
@@ -126,6 +128,7 @@ void TimerVel_Init(){
   TIM_Cmd(TIM6,ENABLE);
 }
 
+//atualiza os vetores de velocidade e do contador de encoder
 void controle(){
 	int currentCount, currentSpd;
 
@@ -138,13 +141,13 @@ void controle(){
 
 	encoderCount[0]=currentCount;
 
-	currentSpd = 1000*(encoderCount[0] - encoderCount[9])*convert;
+	currentSpd = 1000*(encoderCount[0] - encoderCount[9])*convert; //*1000 para nao ter necessidade de utilizar float
 	speed[0]=currentSpd;
 }
 
 int main(void)
 {
-	usb.Init();
+	usb.Init(); //Configura comunicação Serial via USB
 	/**
 	 *  IMPORTANT NOTE!
 	 *  The symbol VECT_TAB_SRAM needs to be defined when building the project
@@ -209,10 +212,11 @@ extern "C" void OTG_FS_WKUP_IRQHandler(void){
 	EXTI_ClearITPendingBit(EXTI_Line18);
 }
 
+//Declara interrupcao do timer6
 extern "C" void TIM6_DAC_IRQHandler(){
 	if(TIM_GetITStatus(TIM6,TIM_IT_Update)){
 		TIM_ClearITPendingBit(TIM6,TIM_IT_Update);
-		controle();
+		controle(); //funcao que atualiza os valores de controle chamada a cada 1ms
 	}
 }
 

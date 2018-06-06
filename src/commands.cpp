@@ -2,7 +2,7 @@
 
 extern CommandLine cmdline;
 
-extern int speed[0];
+extern int speed[0]; //medicao atual da velocidade
 
 
 uint16_t cmd_info(uint16_t argc, uint8_t *argv8[]){
@@ -18,6 +18,6 @@ uint16_t cmd_info(uint16_t argc, uint8_t *argv8[]){
 	return size;
 }
 
-
+//comando a ser enviado no prompt para escrever o valor atual de velocidade na porta serial
 CommandLine cmdline({"[A"},
 					{cmd_info});
