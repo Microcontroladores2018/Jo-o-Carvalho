@@ -10,20 +10,20 @@ continuamente para o PC, onde podem ser plotados através do LabView.
 
 ## Periféricos
 No projeto serão utilizados:
-1 STM32F407 Discovery
-1 Motor DC 7.2V
-1 Encoder em quadratura de 400 divisões
-1 PC - LabView -
-1 Roda de Metal
+#### 1 STM32F407 Discovery
+#### 1 Motor DC 7.2V
+#### 1 Encoder em quadratura de 400 divisões
+#### 1 PC - LabView -
+#### 1 Roda de Metal
 
 ![Diagrama de Blocos](DiagBlocosuC.PNG)
 Figura 1: Diagrama de Blocos
 
 ## Pinagem
-Motor0_ENCA -> PB4 -> TIM3_CH1: Encoder Mode
-Motor0_ENCB -> PB5 -> TIM3_CH2: Encoder Mode
-1ms Interrupter -> TIM6: Interrupt Enable
-USB Serial -> PA11 e PB12: Special Mode
+#### Motor0_ENCA -> PB4 -> TIM3_CH1: Encoder Mode
+#### Motor0_ENCB -> PB5 -> TIM3_CH2: Encoder Mode
+#### 1ms Interrupter -> TIM6: Interrupt Enable
+#### USB Serial -> PA11 e PB12: Special Mode
 
 ## Fluxograma
 O código segue em um Loop Infinito até que seja chamada a interrupção do Timer 6, que acontece a cada 1ms, chamando a função controle que atualiza os vetores encoderCount, calcula o valor atual da velocidade do motor e salva no vetor speed, que também é atualizado no início da interrupção. O valor atual da velocidade é utilizado como parâmetro para uma função que executa comunicação serial via USB de forma que, através de um programa no LabView, pode-se ler continuamente as velocidades medidas e plotá-las em um gráfico.
