@@ -18,3 +18,12 @@ No projeto serão utilizados:
 
 ![Diagrama de Blocos](DiagBlocosuC.PNG)
 Figura 1: Diagrama de Blocos
+
+## Pinagem
+Motor0_ENCA -> PB4 -> TIM3_CH1: Encoder Mode
+Motor0_ENCB -> PB5 -> TIM3_CH2: Encoder Mode
+1ms Interrupter -> TIM6: Interrupt Enable
+USB Serial -> PA11 e PB12: Special Mode
+
+## Fluxograma
+O código segue em um Loop Infinito até que seja chamada a interrupção do Timer 6, que acontece a cada 1ms, chamando a função controle que atualiza os vetores encoderCount e speed 
