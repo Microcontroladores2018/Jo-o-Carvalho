@@ -71,6 +71,7 @@ USB_DEVICE_CLASS_CDC_RNDIS usb_device_class_cdc_rndis(0);
 USB_DEVICE_CLASS_CDC_VCP usb_device_class_cdc_vcp(1);
 USB_DEVICE_CLASS_AUDIO usb_device_class_audio(0);
 
+int desired_speed; //velocidade
 int speed[10]; //vetor que armazena as 10 ultimas medicoes de velocidade da roda
 int encoderCount[10]; //vetor que armazena as 10 ultimas medicoes de velocidade da roda
 float convert = 2*3.14159265*0.028*1000/(10*400*8); //2*pi*raio_da_roda/(10ms*400divisoes*8tx_de_transf)
@@ -79,6 +80,98 @@ float convert = 2*3.14159265*0.028*1000/(10*400*8); //2*pi*raio_da_roda/(10ms*40
 USB_STM32 usb(0x29BC, 0x0002, "IME", "Microcontroladores 2018", SerialNumberGetHexaString());
 
 INTERRUPT_STM32 usb_otg_fs_interrupt(OTG_FS_IRQn, 0x0D, 0x0D, ENABLE);
+
+/**************************** PWM ****************************/
+/*
+ * PINAGEM DO MOTOR0:
+ * MBH: PC9 -> TIM8_CH4
+ * MAH: PC7 -> TIM8_CH2
+ * MBL PC13 -> GPIO_OUT
+ * MAL: PE5 -> GPIO_OUT
+*/
+
+void MBL_GPIO_Init(){
+	RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOC, ENABLE);
+
+	GPIO_InitTypeDef GPIO_InitStructure;
+
+	GPIO_InitStructure.GPIO_Mode=GPIO_Mode_OUT;
+	GPIO_InitStructure.GPIO_OType=GPIO_OType_PP;
+	GPIO_InitStructure.GPIO_PuPd=GPIO_PuPd_NOPULL;
+	GPIO_InitStructure.GPIO_Speed=GPIO_Speed_50MHz;
+	GPIO_InitStructure.GPIO_Pin=GPIO_Pin_13;
+	GPIO_Init(GPIOC, &GPIO_InitStructure);
+
+	GPIO_ResetBits(GPIOC, GPIO_Pin_13);
+}
+
+void MAL_GPIO_Init(){
+	RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOE, ENABLE);
+
+	GPIO_InitTypeDef GPIO_InitStructure;
+
+	GPIO_InitStructure.GPIO_Mode=GPIO_Mode_OUT;
+	GPIO_InitStructure.GPIO_OType=GPIO_OType_PP;
+	GPIO_InitStructure.GPIO_PuPd=GPIO_PuPd_NOPULL;
+	GPIO_InitStructure.GPIO_Speed=GPIO_Speed_50MHz;
+	GPIO_InitStructure.GPIO_Pin=GPIO_Pin_5;
+	GPIO_Init(GPIOE, &GPIO_InitStructure);
+
+	GPIO_ResetBits(GPIOE, GPIO_Pin_5);
+}
+
+void PWM_GPIO_Init(int duty_cycle = 1000){
+	RCC_APB2PeriphClockCmd(RCC_APB2Periph_TIM8, ENABLE);
+	RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOC, ENABLE);
+
+	TIM_TimeBaseInitTypeDef timerInitStructure;
+	timerInitStructure.TIM_Prescaler = (SystemCoreClock/20000000)-1;
+	timerInitStructure.TIM_CounterMode = TIM_CounterMode_Up;
+	timerInitStructure.TIM_Period = 999;
+	timerInitStructure.TIM_ClockDivision = TIM_CKD_DIV1;
+	timerInitStructure.TIM_RepetitionCounter = 0;
+	TIM_TimeBaseInit(TIM8, &timerInitStructure);
+	TIM_Cmd(TIM8, ENABLE);
+
+
+	TIM_OCInitTypeDef outputChannelInit = {0,};
+	outputChannelInit.TIM_OCMode = TIM_OCMode_PWM1;
+	outputChannelInit.TIM_Pulse = duty_cycle;
+	outputChannelInit.TIM_OutputState = TIM_OutputState_Enable;
+	outputChannelInit.TIM_OCPolarity = TIM_OCPolarity_High;
+
+	TIM_OC2Init(TIM8, &outputChannelInit);
+	TIM_OC2PreloadConfig(TIM8, TIM_OCPreload_Enable);
+
+	GPIO_PinAFConfig(GPIOC, GPIO_PinSource7, GPIO_AF_TIM8);
+
+	TIM_OC4Init(TIM8, &outputChannelInit);
+	TIM_OC4PreloadConfig(TIM8, TIM_OCPreload_Enable);
+
+	GPIO_PinAFConfig(GPIOC, GPIO_PinSource9, GPIO_AF_TIM8);
+}
+
+void Set_duty_cycle(int duty_cycle, int pin){
+	if (pin == 7){
+		TIM8->CCR4 = 1000;
+		TIM8->CCR2 = duty_cycle;
+	}
+	else if (pin == 9){
+		TIM8->CCR2 = 1000;
+		TIM8->CCR4 = duty_cycle;
+	}
+	else {
+		TIM8->CCR2 = 1000;
+		TIM8->CCR4 = 1000;
+	}
+}
+
+void M0_Init(){
+	MBL_GPIO_Init();
+	MAL_GPIO_Init();
+	PWM_GPIO_Init(500);
+}
+/*************************************************************/
 
 //Configura PB4 e PB5 para leitura de encoder
 void TimerEncM0_Init(){
@@ -166,6 +259,7 @@ int main(void)
 	STM_EVAL_LEDInit(LED5);
 	STM_EVAL_LEDInit(LED6);
 
+	/*Encoder_Init*/
 	TimerEncM0_Init();
 	TimerVel_Init();
 
@@ -178,10 +272,15 @@ int main(void)
 
 	NVIC_Init(&NVIC_InitStructure);
 
+	/*Motor_Init*/
+	M0_Init();
+
 	/* Infinite loop */
 	CircularBuffer<uint8_t> buffer(0,1024);
 	while (1)
 	{
+		Set_duty_cycle(0, 7);
+
 		uint16_t size=usb_device_class_cdc_vcp.GetData(buffer,256);
 		if(size) {
 			cmdline.In(buffer);
