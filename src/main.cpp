@@ -81,7 +81,7 @@ USB_STM32 usb(0x29BC, 0x0002, "IME", "Microcontroladores 2018", SerialNumberGetH
 
 INTERRUPT_STM32 usb_otg_fs_interrupt(OTG_FS_IRQn, 0x0D, 0x0D, ENABLE);
 
-/**************************** PWM ****************************/
+/***************************** PWM ******************************/
 /*
  * PINAGEM DO MOTOR0:
  * MBH: PC9 -> TIM8_CH4
@@ -117,10 +117,10 @@ void MAL_GPIO_Init(){
 	GPIO_InitStructure.GPIO_Pin=GPIO_Pin_5;
 	GPIO_Init(GPIOE, &GPIO_InitStructure);
 
-	GPIO_SetBits(GPIOE, GPIO_Pin_5);
+	GPIO_ResetBits(GPIOE, GPIO_Pin_5);
 }
 
-void PWM_GPIO_Init(int duty_cycle = 1000){
+void PWM_GPIO_Init(int duty_cycle){
 	RCC_APB2PeriphClockCmd(RCC_APB2Periph_TIM8, ENABLE);
 	RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOC, ENABLE);
 
@@ -182,9 +182,16 @@ void M0_Init(){
 	MAL_GPIO_Init();
 	PWM_GPIO_Init(1000);
 }
-/*************************************************************/
+/****************************************************************/
 
-//Configura PB4 e PB5 para leitura de encoder
+
+/******************** Leitura de Encoder ************************/
+/*
+ * PINAGEM DO ENCODER:
+ * ENCA: PB4 -> TIM3_CH1
+ * ENCB: PB5 -> TIM3_CH2
+ *
+ */
 void TimerEncM0_Init(){
 	RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOB, ENABLE);
 
@@ -214,8 +221,12 @@ void TimerEncM0_Init(){
 	//TIM_SetCounter(TIM3, (uint32_t) 0);
 	//TIM_SetAutoreload(TIM3, 9999);//0x226=550
 }
+/****************************************************************/
 
-//Config timer6 para gerar interrupção a cada 1ms
+/************************* Controle *****************************/
+/*
+*TIM6 gera interrupção a cada 1ms para atualização dos valores de controle
+*/
 void TimerVel_Init(){
   RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM6, ENABLE);
   TIM_DeInit(TIM6);
@@ -232,7 +243,43 @@ void TimerVel_Init(){
   TIM_Cmd(TIM6,ENABLE);
 }
 
-//atualiza os vetores de velocidade e do contador de encoder
+//Inicializa interrupção do timer 6
+void TIM6_NVIC_Init(){
+	NVIC_InitTypeDef NVIC_InitStructure;
+
+	NVIC_InitStructure.NVIC_IRQChannel = TIM6_DAC_IRQn;
+	NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
+	NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0x0C;
+	NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0x0C;
+
+	NVIC_Init(&NVIC_InitStructure);
+}
+
+void speed_conversion(){
+	if (desired_speed>0){
+		GPIO_ResetBits(GPIOC, GPIO_Pin_13);
+		//GPIO_SetBits(GPIOC, GPIO_Pin_7);
+
+		GPIO_SetBits(GPIOE, GPIO_Pin_5);
+		Set_duty_cycle(0, 9);
+
+	}
+	else if (desired_speed<0){
+		GPIO_ResetBits(GPIOE, GPIO_Pin_5);
+		//GPIO_SetBits(GPIOC, GPIO_Pin_9);
+
+		GPIO_SetBits(GPIOC, GPIO_Pin_13);
+		Set_duty_cycle(0, 7);
+	}
+	else if (desired_speed==0){
+		GPIO_ResetBits(GPIOE, GPIO_Pin_5);
+		GPIO_ResetBits(GPIOC, GPIO_Pin_13);
+		GPIO_SetBits(GPIOC, GPIO_Pin_7);
+		GPIO_SetBits(GPIOC, GPIO_Pin_9);
+	}
+}
+
+//Atualiza os vetores de velocidade e do contador de encoder
 void controle(){
 	int currentCount, currentSpd;
 
@@ -245,13 +292,16 @@ void controle(){
 
 	encoderCount[0]=currentCount;
 
-	currentSpd = 1000*(encoderCount[0] - encoderCount[9])*convert; //*1000 para nao ter necessidade de utilizar float
+	currentSpd = 1000*(encoderCount[0] - encoderCount[9])*convert; //x1000 para nao ter necessidade de utilizar float
 	speed[0]=currentSpd;
+
+	speed_conversion();
 }
+/****************************************************************/
 
 int main(void)
 {
-	usb.Init(); //Configura comunicação Serial via USB
+ 	usb.Init(); //Configura comunicação Serial via USB
 	/**
 	 *  IMPORTANT NOTE!
 	 *  The symbol VECT_TAB_SRAM needs to be defined when building the project
@@ -261,8 +311,6 @@ int main(void)
 	 *  SCB->VTOR register.
 	 *  E.g.  SCB->VTOR = 0x20000000;
 	 */
-
-	/* TODO - Add your application code here */
 
 	/* Initialize LEDs */
 	STM_EVAL_LEDInit(LED3);
@@ -274,24 +322,16 @@ int main(void)
 	TimerEncM0_Init();
 	TimerVel_Init();
 
-	NVIC_InitTypeDef NVIC_InitStructure;
-
-	NVIC_InitStructure.NVIC_IRQChannel = TIM6_DAC_IRQn;
-	NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
-	NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0x0C;
-	NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0x0C;
-
-	NVIC_Init(&NVIC_InitStructure);
-
 	/*Motor_Init*/
 	M0_Init();
+
+	/*TIM6 Interrupt Init*/
+	TIM6_NVIC_Init();
 
 	/* Infinite loop */
 	CircularBuffer<uint8_t> buffer(0,1024);
 	while (1)
 	{
-		Set_duty_cycle(700, 7);
-
 		uint16_t size=usb_device_class_cdc_vcp.GetData(buffer,256);
 		if(size) {
 			cmdline.In(buffer);

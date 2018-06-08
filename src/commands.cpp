@@ -17,10 +17,9 @@ uint16_t cmd_info(uint16_t argc, uint8_t *argv8[]){
 	}
 	else if(argc==2){
 		//size+=sprintf(buffer+size, "%s\r\n", argv8[1]);
-		desired_speed = 0;
-		for (int i=0; argv8[1][i]!='\0'; i++){
-			desired_speed = 10*desired_speed + (argv8[1][i] - '0');
-		}
+
+		desired_speed = atoi((char*)argv8[1]);
+
 		size+=sprintf(buffer+size, "%d\r\n", desired_speed);
 	}
 	else {
