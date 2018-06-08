@@ -132,6 +132,8 @@ void PWM_GPIO_Init(int duty_cycle = 1000){
 	gpioStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
 	GPIO_Init(GPIOC, &gpioStructure);
 
+	GPIO_PinAFConfig(GPIOC, GPIO_PinSource9, GPIO_AF_TIM8);
+
 	TIM_TimeBaseInitTypeDef timerInitStructure;
 	timerInitStructure.TIM_Prescaler = (SystemCoreClock/1000000)-1;
 	timerInitStructure.TIM_CounterMode = TIM_CounterMode_Up;
@@ -139,7 +141,6 @@ void PWM_GPIO_Init(int duty_cycle = 1000){
 	timerInitStructure.TIM_ClockDivision = TIM_CKD_DIV1;
 	timerInitStructure.TIM_RepetitionCounter = 0;
 	TIM_TimeBaseInit(TIM8, &timerInitStructure);
-	TIM_Cmd(TIM8, ENABLE);
 
 
 	TIM_OCInitTypeDef outputChannelInit = {0,};
@@ -157,7 +158,8 @@ void PWM_GPIO_Init(int duty_cycle = 1000){
 	TIM_OC4Init(TIM8, &outputChannelInit);
 	TIM_OC4PreloadConfig(TIM8, TIM_OCPreload_Enable);
 
-	GPIO_PinAFConfig(GPIOC, GPIO_PinSource9, GPIO_AF_TIM8);
+	TIM_Cmd(TIM8, ENABLE);
+	TIM_CtrlPWMOutputs(TIM8, ENABLE);
 }
 
 void Set_duty_cycle(int duty_cycle, int pin){
@@ -178,7 +180,7 @@ void Set_duty_cycle(int duty_cycle, int pin){
 void M0_Init(){
 	MBL_GPIO_Init();
 	MAL_GPIO_Init();
-	PWM_GPIO_Init(500);
+	PWM_GPIO_Init(1000);
 }
 /*************************************************************/
 
@@ -288,7 +290,7 @@ int main(void)
 	CircularBuffer<uint8_t> buffer(0,1024);
 	while (1)
 	{
-		Set_duty_cycle(0, 7);
+		Set_duty_cycle(700, 7);
 
 		uint16_t size=usb_device_class_cdc_vcp.GetData(buffer,256);
 		if(size) {
