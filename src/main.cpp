@@ -117,15 +117,23 @@ void MAL_GPIO_Init(){
 	GPIO_InitStructure.GPIO_Pin=GPIO_Pin_5;
 	GPIO_Init(GPIOE, &GPIO_InitStructure);
 
-	GPIO_ResetBits(GPIOE, GPIO_Pin_5);
+	GPIO_SetBits(GPIOE, GPIO_Pin_5);
 }
 
 void PWM_GPIO_Init(int duty_cycle = 1000){
 	RCC_APB2PeriphClockCmd(RCC_APB2Periph_TIM8, ENABLE);
 	RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOC, ENABLE);
 
+	GPIO_InitTypeDef gpioStructure;
+	gpioStructure.GPIO_Pin = GPIO_Pin_7 | GPIO_Pin_9;
+	gpioStructure.GPIO_Mode = GPIO_Mode_AF;
+	gpioStructure.GPIO_Speed = GPIO_Speed_100MHz;
+	gpioStructure.GPIO_OType = GPIO_OType_PP;
+	gpioStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
+	GPIO_Init(GPIOC, &gpioStructure);
+
 	TIM_TimeBaseInitTypeDef timerInitStructure;
-	timerInitStructure.TIM_Prescaler = (SystemCoreClock/20000000)-1;
+	timerInitStructure.TIM_Prescaler = (SystemCoreClock/1000000)-1;
 	timerInitStructure.TIM_CounterMode = TIM_CounterMode_Up;
 	timerInitStructure.TIM_Period = 999;
 	timerInitStructure.TIM_ClockDivision = TIM_CKD_DIV1;
@@ -138,7 +146,8 @@ void PWM_GPIO_Init(int duty_cycle = 1000){
 	outputChannelInit.TIM_OCMode = TIM_OCMode_PWM1;
 	outputChannelInit.TIM_Pulse = duty_cycle;
 	outputChannelInit.TIM_OutputState = TIM_OutputState_Enable;
-	outputChannelInit.TIM_OCPolarity = TIM_OCPolarity_High;
+	outputChannelInit.TIM_OCPolarity = TIM_OCPolarity_Low;
+	outputChannelInit.TIM_OCIdleState = TIM_OCIdleState_Set;
 
 	TIM_OC2Init(TIM8, &outputChannelInit);
 	TIM_OC2PreloadConfig(TIM8, TIM_OCPreload_Enable);
