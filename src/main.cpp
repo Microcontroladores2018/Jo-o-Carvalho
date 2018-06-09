@@ -256,27 +256,26 @@ void TIM6_NVIC_Init(){
 }
 
 void speed_conversion(){
-	if (desired_speed>0){
+	if (desired_speed<0){
 		GPIO_ResetBits(GPIOC, GPIO_Pin_13);
-		//GPIO_SetBits(GPIOC, GPIO_Pin_7);
+		TIM8->CCR2 = 1000;
 
 		GPIO_SetBits(GPIOE, GPIO_Pin_5);
-		Set_duty_cycle(0, 9);
-
+		TIM8->CCR4 = 0;
 	}
-	else if (desired_speed<0){
+	else if (desired_speed>0){
 		GPIO_ResetBits(GPIOE, GPIO_Pin_5);
-		//GPIO_SetBits(GPIOC, GPIO_Pin_9);
+		TIM8->CCR4 = 1000;
 
 		GPIO_SetBits(GPIOC, GPIO_Pin_13);
-		Set_duty_cycle(0, 7);
+		TIM8->CCR2 = 0;
 	}
-	else if (desired_speed==0){
+	/*else if (desired_speed==0){
 		GPIO_ResetBits(GPIOE, GPIO_Pin_5);
 		GPIO_ResetBits(GPIOC, GPIO_Pin_13);
 		GPIO_SetBits(GPIOC, GPIO_Pin_7);
 		GPIO_SetBits(GPIOC, GPIO_Pin_9);
-	}
+	}*/
 }
 
 //Atualiza os vetores de velocidade e do contador de encoder
