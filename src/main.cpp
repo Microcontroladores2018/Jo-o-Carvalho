@@ -75,6 +75,7 @@ int desired_speed; //velocidade
 int speed[10]; //vetor que armazena as 10 ultimas medicoes de velocidade da roda
 int encoderCount[10]; //vetor que armazena as 10 ultimas medicoes de velocidade da roda
 float convert = 2*3.14159265*0.028*1000/(10*400*8); //2*pi*raio_da_roda/(10ms*400divisoes*8tx_de_transf)
+int max_speed = 3000;
 
 
 USB_STM32 usb(0x29BC, 0x0002, "IME", "Microcontroladores 2018", SerialNumberGetHexaString());
@@ -87,7 +88,7 @@ INTERRUPT_STM32 usb_otg_fs_interrupt(OTG_FS_IRQn, 0x0D, 0x0D, ENABLE);
  * MBH: PC9 -> TIM8_CH4
  * MAH: PC7 -> TIM8_CH2
  * MBL PC13 -> GPIO_OUT
- * MAL: PE5 -> GPIO_OUT
+ * MAL: PE5 -> GPIO_OUT  545950,8
 */
 
 void MBL_GPIO_Init(){
@@ -147,7 +148,7 @@ void PWM_GPIO_Init(int duty_cycle){
 	outputChannelInit.TIM_OCMode = TIM_OCMode_PWM1;
 	outputChannelInit.TIM_Pulse = duty_cycle;
 	outputChannelInit.TIM_OutputState = TIM_OutputState_Enable;
-	outputChannelInit.TIM_OCPolarity = TIM_OCPolarity_Low;
+	outputChannelInit.TIM_OCPolarity = TIM_OCPolarity_High;
 	outputChannelInit.TIM_OCIdleState = TIM_OCIdleState_Set;
 
 	TIM_OC2Init(TIM8, &outputChannelInit);
@@ -164,23 +165,23 @@ void PWM_GPIO_Init(int duty_cycle){
 
 void Set_duty_cycle(int duty_cycle, int pin){
 	if (pin == 7){
-		TIM8->CCR4 = 1000;
-		TIM8->CCR2 = duty_cycle;
+		TIM8->CCR4 = 0; //PC7
+		TIM8->CCR2 = duty_cycle; //PC9
 	}
 	else if (pin == 9){
-		TIM8->CCR2 = 1000;
-		TIM8->CCR4 = duty_cycle;
+		TIM8->CCR2 = 0; //PC9
+		TIM8->CCR4 = duty_cycle; //PC7
 	}
 	else {
-		TIM8->CCR2 = 1000;
-		TIM8->CCR4 = 1000;
+		TIM8->CCR2 = 0;
+		TIM8->CCR4 = 0;
 	}
 }
 
 void M0_Init(){
 	MBL_GPIO_Init();
 	MAL_GPIO_Init();
-	PWM_GPIO_Init(1000);
+	PWM_GPIO_Init(0);
 }
 /****************************************************************/
 
@@ -258,24 +259,18 @@ void TIM6_NVIC_Init(){
 void speed_conversion(){
 	if (desired_speed<0){
 		GPIO_ResetBits(GPIOC, GPIO_Pin_13);
-		TIM8->CCR2 = 1000;
+		TIM8->CCR4 = 0; //PC7 RST
 
 		GPIO_SetBits(GPIOE, GPIO_Pin_5);
-		TIM8->CCR4 = 0;
+		TIM8->CCR2 = -1000*desired_speed/max_speed; //PC9 PWM DUTY CYCLE
 	}
-	else if (desired_speed>0){
+	else if (desired_speed>=0){
 		GPIO_ResetBits(GPIOE, GPIO_Pin_5);
-		TIM8->CCR4 = 1000;
+		TIM8->CCR2 = 0; //PC9 RST
 
 		GPIO_SetBits(GPIOC, GPIO_Pin_13);
-		TIM8->CCR2 = 0;
+		TIM8->CCR4 = 1000*desired_speed/max_speed; //PC7 PWM CUTY CYCLE
 	}
-	/*else if (desired_speed==0){
-		GPIO_ResetBits(GPIOE, GPIO_Pin_5);
-		GPIO_ResetBits(GPIOC, GPIO_Pin_13);
-		GPIO_SetBits(GPIOC, GPIO_Pin_7);
-		GPIO_SetBits(GPIOC, GPIO_Pin_9);
-	}*/
 }
 
 //Atualiza os vetores de velocidade e do contador de encoder
@@ -296,6 +291,15 @@ void controle(){
 
 	speed_conversion();
 }
+
+int malha_controle(int input){
+	int output;
+
+
+
+
+	return output;
+}
 /****************************************************************/
 
 int main(void)
@@ -312,10 +316,10 @@ int main(void)
 	 */
 
 	/* Initialize LEDs */
-	STM_EVAL_LEDInit(LED3);
+	/*STM_EVAL_LEDInit(LED3);
 	STM_EVAL_LEDInit(LED4);
 	STM_EVAL_LEDInit(LED5);
-	STM_EVAL_LEDInit(LED6);
+	STM_EVAL_LEDInit(LED6);*/
 
 	/*Encoder_Init*/
 	TimerEncM0_Init();
