@@ -38,6 +38,7 @@ SOFTWARE.
 #include <utils/io_pin_stm32.h>
 #include <utils/serialnumber.h>
 #include <utils/interrupt_stm32.h>
+#include "control/Robo.h"
 
 extern "C"{
 #include "usb_dcd_int.h"
@@ -77,10 +78,69 @@ int encoderCount[10]; //vetor que armazena as 10 ultimas medicoes de velocidade 
 float convert = 2*3.14159265*0.028*1000/(10*400*8); //2*pi*raio_da_roda/(10ms*400divisoes*8tx_de_transf)
 int max_speed = 3000;
 
-
 USB_STM32 usb(0x29BC, 0x0002, "IME", "Microcontroladores 2018", SerialNumberGetHexaString());
 
 INTERRUPT_STM32 usb_otg_fs_interrupt(OTG_FS_IRQn, 0x0D, 0x0D, ENABLE);
+
+/**************************** MOTORES ************************************/
+/*
+ * PINAGEM DO MOTOR0:
+ * MAH: PC9 -> TIM8_CH4
+ * MAL: PE5 -> GPIO_OUT
+ * MBH PC7 -> TIM8_CH2
+ * MBL: PC13 -> GPIO_OUT
+*/
+Pwm ahpwm0(GPIOC, GPIO_Pin_9, TIM8, GPIO_PinSource9, GPIO_AF_TIM8, 4, false);
+GPIO algpio0(GPIOE, GPIO_Pin_5);
+Pwm bhpwm0(GPIOC, GPIO_Pin_7, TIM8, GPIO_PinSource7, GPIO_AF_TIM8, 2, false);
+GPIO blgpio0(GPIOC, GPIO_Pin_13);
+Encoder encoder0(GPIOB, GPIOB, GPIO_Pin_4, GPIO_Pin_5, TIM3, GPIO_PinSource4, GPIO_PinSource5, GPIO_AF_TIM3);
+Motor motor0(&ahpwm0, &algpio0, &bhpwm0, &blgpio0, &encoder0);
+
+/*
+ * PINAGEM DO MOTOR1:
+ * MAH: PA8 -> TIM1_CH1
+ * MAL: PE6 -> GPIO_OUT
+ * MBH PC8 -> TIM8_CH3
+ * MBL: PE4 -> GPIO_OUT
+*/
+Pwm ahpwm1(GPIOA, GPIO_Pin_8, TIM1, GPIO_PinSource8, GPIO_AF_TIM1, 1, false);
+GPIO algpio1(GPIOE, GPIO_Pin_6);
+Pwm bhpwm1(GPIOC, GPIO_Pin_8, TIM8, GPIO_PinSource8, GPIO_AF_TIM8, 3, false);
+GPIO blgpio1(GPIOE, GPIO_Pin_4);
+Encoder encoder1(GPIOA, GPIOB, GPIO_Pin_15, GPIO_Pin_3, TIM2, GPIO_PinSource15, GPIO_PinSource3, GPIO_AF_TIM2);
+Motor motor1(&ahpwm1, &algpio1, &bhpwm1, &blgpio1, &encoder1);
+
+/*
+ * PINAGEM DO MOTOR2:
+ * MAH: PC6 -> TIM8_CH1
+ * MAL: PC2 -> GPIO_OUT
+ * MBH PCE11 -> TIM1_CH2
+ * MBL: PB1 -> GPIO_OUT
+*/
+Pwm ahpwm2(GPIOC, GPIO_Pin_6, TIM8, GPIO_PinSource6, GPIO_AF_TIM8, 1, false);
+GPIO algpio2(GPIOC, GPIO_Pin_2);
+Pwm bhpwm2(GPIOE, GPIO_Pin_11, TIM1, GPIO_PinSource11, GPIO_AF_TIM1, 2, false);
+GPIO blgpio2(GPIOB, GPIO_Pin_1);
+Encoder encoder2(GPIOA, GPIOA, GPIO_Pin_0, GPIO_Pin_1, TIM5, GPIO_PinSource0, GPIO_PinSource1, GPIO_AF_TIM5);
+Motor motor2(&ahpwm2, &algpio2, &bhpwm2, &blgpio2, &encoder2);
+
+/*
+ * PINAGEM DO MOTOR3:
+ * MAH: PE14 -> TIM1_CH4
+ * MAL: PB12 -> GPIO_OUT
+ * MBH PE13 -> TIM1_CH3
+ * MBL: PB11 -> GPIO_OUT
+*/
+Pwm ahpwm3(GPIOE, GPIO_Pin_14, TIM1, GPIO_PinSource14, GPIO_AF_TIM1, 4, false);
+GPIO algpio3(GPIOB, GPIO_Pin_12);
+Pwm bhpwm3(GPIOE, GPIO_Pin_13, TIM1, GPIO_PinSource13, GPIO_AF_TIM1, 3, false);
+GPIO blgpio3(GPIOB, GPIO_Pin_11);
+Encoder encoder3(GPIOB, GPIOB, GPIO_Pin_6, GPIO_Pin_7, TIM4, GPIO_PinSource6, GPIO_PinSource7, GPIO_AF_TIM4);
+Motor motor3(&ahpwm3, &algpio3, &bhpwm3, &blgpio3, &encoder3);
+
+Robo robo(&motor0, &motor1, &motor2, &motor3);
+/*********************************************************************/
 
 /***************************** PWM ******************************/
 /*
@@ -88,9 +148,10 @@ INTERRUPT_STM32 usb_otg_fs_interrupt(OTG_FS_IRQn, 0x0D, 0x0D, ENABLE);
  * MBH: PC9 -> TIM8_CH4
  * MAH: PC7 -> TIM8_CH2
  * MBL PC13 -> GPIO_OUT
- * MAL: PE5 -> GPIO_OUT  545950,8
+ * MAL: PE5 -> GPIO_OUT
 */
 
+/*
 void MBL_GPIO_Init(){
 	RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOC, ENABLE);
 
@@ -133,12 +194,15 @@ void PWM_GPIO_Init(int duty_cycle){
 	gpioStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
 	GPIO_Init(GPIOC, &gpioStructure);
 
-	GPIO_PinAFConfig(GPIOC, GPIO_PinSource9, GPIO_AF_TIM8);
+
 
 	TIM_TimeBaseInitTypeDef timerInitStructure;
-	timerInitStructure.TIM_Prescaler = (SystemCoreClock/1000000)-1;
+	timerInitStructure.TIM_Prescaler = (SystemCoreClock/2000000)-1;
+	//timerInitStructure.TIM_Prescaler = 7; //(SysClock/21000000)-1
+
 	timerInitStructure.TIM_CounterMode = TIM_CounterMode_Up;
-	timerInitStructure.TIM_Period = 999;
+	//timerInitStructure.TIM_Period = 1049; //(SysClock/(Prescaler+1))/20kHz-1 = 100% dutycyle
+	timerInitStructure.TIM_Period = 1000;
 	timerInitStructure.TIM_ClockDivision = TIM_CKD_DIV1;
 	timerInitStructure.TIM_RepetitionCounter = 0;
 	TIM_TimeBaseInit(TIM8, &timerInitStructure);
@@ -149,11 +213,12 @@ void PWM_GPIO_Init(int duty_cycle){
 	outputChannelInit.TIM_Pulse = duty_cycle;
 	outputChannelInit.TIM_OutputState = TIM_OutputState_Enable;
 	outputChannelInit.TIM_OCPolarity = TIM_OCPolarity_High;
-	outputChannelInit.TIM_OCIdleState = TIM_OCIdleState_Set;
+	outputChannelInit.TIM_OCIdleState = TIM_OCIdleState_Reset;
 
 	TIM_OC2Init(TIM8, &outputChannelInit);
 	TIM_OC2PreloadConfig(TIM8, TIM_OCPreload_Enable);
 
+	GPIO_PinAFConfig(GPIOC, GPIO_PinSource9, GPIO_AF_TIM8);
 	GPIO_PinAFConfig(GPIOC, GPIO_PinSource7, GPIO_AF_TIM8);
 
 	TIM_OC4Init(TIM8, &outputChannelInit);
@@ -193,6 +258,8 @@ void M0_Init(){
  * ENCB: PB5 -> TIM3_CH2
  *
  */
+
+/*
 void TimerEncM0_Init(){
 	RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOB, ENABLE);
 
@@ -256,6 +323,7 @@ void TIM6_NVIC_Init(){
 	NVIC_Init(&NVIC_InitStructure);
 }
 
+/*
 void speed_conversion(){
 	if (desired_speed<0){
 		GPIO_ResetBits(GPIOC, GPIO_Pin_13);
@@ -292,11 +360,27 @@ void controle(){
 	speed_conversion();
 }
 
-int malha_controle(int input){
+int pid_speed(int input){
 	int output;
+	int e[20];
+	int derror;
+	int ierror;
+	int A=1;
+	int kp, ki, kd;
 
+	e[0] = desired_speed - speed[0];
 
+	derror = e[0]-e[1];
 
+	ierror=0;
+	for (int j=1; j<20; j++){
+		ierror+=e[j];
+	}
+
+	if (ierror > 3000) ierror = 3000;
+	if (ierror < -3000) ierror = -3000;
+
+	output = A*desired_speed + kp*e[0] + ki*ierror + kd*derror;
 
 	return output;
 }
@@ -304,7 +388,8 @@ int malha_controle(int input){
 
 int main(void)
 {
- 	usb.Init(); //Configura comunicação Serial via USB
+	robo.init();
+	usb.Init(); //Configura comunicação Serial via USB
 	/**
 	 *  IMPORTANT NOTE!
 	 *  The symbol VECT_TAB_SRAM needs to be defined when building the project
@@ -316,17 +401,17 @@ int main(void)
 	 */
 
 	/* Initialize LEDs */
-	/*STM_EVAL_LEDInit(LED3);
+	STM_EVAL_LEDInit(LED3);
 	STM_EVAL_LEDInit(LED4);
 	STM_EVAL_LEDInit(LED5);
-	STM_EVAL_LEDInit(LED6);*/
+	STM_EVAL_LEDInit(LED6);
 
 	/*Encoder_Init*/
-	TimerEncM0_Init();
+	//TimerEncM0_Init();
 	TimerVel_Init();
 
 	/*Motor_Init*/
-	M0_Init();
+	//M0_Init();
 
 	/*TIM6 Interrupt Init*/
 	TIM6_NVIC_Init();
@@ -369,7 +454,9 @@ extern "C" void OTG_FS_WKUP_IRQHandler(void){
 extern "C" void TIM6_DAC_IRQHandler(){
 	if(TIM_GetITStatus(TIM6,TIM_IT_Update)){
 		TIM_ClearITPendingBit(TIM6,TIM_IT_Update);
-		controle(); //funcao que atualiza os valores de controle chamada a cada 1ms
+		//controle(); //funcao que atualiza os valores de controle chamada a cada 1ms
+		robo.get_wheel_speed();
+		robo.control_robo_speed(robo.speed);
 	}
 }
 
