@@ -401,10 +401,10 @@ int main(void)
 	 */
 
 	/* Initialize LEDs */
-	STM_EVAL_LEDInit(LED3);
+	/*STM_EVAL_LEDInit(LED3);
 	STM_EVAL_LEDInit(LED4);
 	STM_EVAL_LEDInit(LED5);
-	STM_EVAL_LEDInit(LED6);
+	STM_EVAL_LEDInit(LED6);*/
 
 	/*Encoder_Init*/
 	//TimerEncM0_Init();
@@ -455,8 +455,9 @@ extern "C" void TIM6_DAC_IRQHandler(){
 	if(TIM_GetITStatus(TIM6,TIM_IT_Update)){
 		TIM_ClearITPendingBit(TIM6,TIM_IT_Update);
 		//controle(); //funcao que atualiza os valores de controle chamada a cada 1ms
-		robo.get_wheel_speed();
-		robo.control_robo_speed(robo.speed);
+		STM_EVAL_LEDOn(LED3);
+		robo.get_robo_speed();
+		robo.control_robo_speed();
 	}
 }
 

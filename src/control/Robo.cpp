@@ -87,7 +87,7 @@ void Robo::control_robo_speed(float v_r, float v_t, float w)
 	}
 }
 
-void Robo::control_robo_speed(float Mx_speed[])
+void Robo::control_robo_speed()
 {
 	for (int i=0; i<4; i++){
 		control_motor_speed(i, speed[i]);
@@ -130,11 +130,7 @@ void Robo::set_pid(float p, float i, float d)
 
 void Robo::get_pid(void)
 {
-	float *c;
-	motor[0]->GetPID(c);
-	kp=c[0];
-	ki=c[1];
-	kd=c[2];
+	motor[0]->GetPID(kp, ki, kd);
 }
 
 void Robo::interrupt_control()

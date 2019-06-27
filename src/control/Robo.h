@@ -32,7 +32,7 @@ public:
 
     //controle do robo como um todo
     void control_robo_speed(float v_r, float v_t, float w);
-    void control_robo_speed(float Mx_speed[]);
+    void control_robo_speed();
     void set_robo_speed(float Mx_speed[]);
     void get_robo_speed();
 
